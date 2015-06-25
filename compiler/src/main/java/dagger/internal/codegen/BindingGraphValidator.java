@@ -120,7 +120,7 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
       return reportBuilder.build();
     }
 
-    void validateSubgraph(BindingGraph subject) {
+    void validate(BindingGraph subject) {
       validateComponentScope(subject);
       validateDependencyScopes(subject);
       validateBuilders(subject);
@@ -135,9 +135,7 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
         }
       }
 
-      for (BindingGraph subgraph : subject.subgraphs().values()) {
-        validateSubgraph(subgraph);
-      }
+      validateSubcomponents(subject);
     }
 
     private void traverseRequest(
@@ -168,6 +166,12 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
         }
         bindingPath.poll();
         keysInPath.remove(requestKey);
+      }
+    }
+
+    private void validateSubcomponents(BindingGraph graph) {
+      for (Entry<ExecutableElement, BindingGraph> subgraphEntry : graph.subgraphs().entrySet()) {
+        validate(subgraphEntry.getValue());
       }
     }
 
@@ -392,7 +396,7 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
      */
     private void validateDependencyScopes(BindingGraph subject) {
       ComponentDescriptor descriptor = subject.componentDescriptor();
-      Optional<AnnotationMirror> scope = descriptor.scope();
+      Optional<AnnotationMirror> scope = subject.componentDescriptor().scope();
       ImmutableSet<TypeElement> scopedDependencies = scopedTypesIn(descriptor.dependencies());
       if (scope.isPresent()) {
         // Dagger 1.x scope compatibility requires this be suppress-able.
@@ -449,13 +453,18 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
         return;
       }
 
-      Set<TypeElement> allDependents = subject.componentRequirements();
+      Set<TypeElement> allDependents =
+          Sets.union(
+              Sets.union(
+                  subject.transitiveModules().keySet(),
+                  componentDesc.dependencies()),
+              componentDesc.executorDependency().asSet());
       Set<TypeElement> requiredDependents =
           Sets.filter(allDependents, new Predicate<TypeElement>() {
             @Override public boolean apply(TypeElement input) {
               return !Util.componentCanMakeNewInstances(input);
             }
-          });
+          });    
       final BuilderSpec spec = componentDesc.builderSpec().get();
       Map<TypeElement, ExecutableElement> allSetters = spec.methodMap();
 
@@ -475,7 +484,7 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
             spec.builderDefinitionType());
       }
 
-      Set<TypeElement> missingSetters = Sets.difference(requiredDependents, allSetters.keySet());
+      Set<TypeElement> missingSetters = Sets.difference(requiredDependents, allSetters.keySet());    
       if (!missingSetters.isEmpty()) {
         reportBuilder.addItem(String.format(msgs.missingSetters(), missingSetters),
             spec.builderDefinitionType());
@@ -727,7 +736,7 @@ public class BindingGraphValidator implements Validator<BindingGraph> {
   @Override
   public ValidationReport<BindingGraph> validate(final BindingGraph subject) {
     Validation validation = new Validation(subject);
-    validation.validateSubgraph(subject);
+    validation.validate(subject);
     return validation.buildReport();
   }
 
