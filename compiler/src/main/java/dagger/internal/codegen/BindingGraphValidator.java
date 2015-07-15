@@ -45,6 +45,7 @@ import java.util.Deque;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import javax.inject.Singleton;
 import javax.lang.model.element.AnnotationMirror;
