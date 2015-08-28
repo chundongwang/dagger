@@ -50,6 +50,7 @@
     <auto.service.version>1.0-rc2</auto.service.version>
     <auto.value.version>1.0</auto.value.version>
     <guava.version>18.0</guava.version>
+    <googlejavaformat.version>0.1-SNAPSHOT</googlejavaformat.version>
 
     <!-- Test Dependencies -->
     <compile-testing.version>0.7</compile-testing.version>
@@ -98,6 +99,11 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.googlejavaformat</groupId>
+        <artifactId>google-java-format</artifactId>
+        <version>${googlejavaformat.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
